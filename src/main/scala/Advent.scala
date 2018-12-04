@@ -1,5 +1,5 @@
-import days.{Day1, Day2}
+import days.{Day1, Day2, Day3}
 
 object Advent extends App {
-  println(Day2.part2())
+  println(Day3.part1())
 }
