@@ -16,7 +16,23 @@ object Day2 {
     r._1 * r._2
   }
 
-  def part2(): Long = {
-    ???
+  def part2(): String = {
+    val l = Source.fromFile("sources/source2.txt").getLines.toVector.zipWithIndex
+    val data = l.map(id => (id._1.sorted, id._2)).sortWith(_._1 < _._1).zipWithIndex
+
+    for {
+      id <- data
+    } yield {
+      val nextId = data(id._2 + 1)
+
+      if (id._1._1.diff(nextId._1._1).length == 1) {
+        val matchingId = l(id._1._2)
+        val nextMatchingId = l(nextId._1._2)
+
+        return matchingId._1.intersect(nextMatchingId._1)
+      }
+    }
+
+    ""
   }
 }
