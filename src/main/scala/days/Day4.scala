@@ -6,25 +6,65 @@ import org.joda.time.format.DateTimeFormat
 import scala.io.Source
 
 object Day4 {
-  def part1() = {
-    val records = Source.fromFile("sources/source4.txt").getLines.toVector
-      .map(parseData)
-      .sortWith(_.dateTime.getMillis < _.dateTime.getMillis)
-    val len = records.length
-    val firstGuard = records.head.guardId.get
-    val allGuards = records.filter(_.guardId.isDefined).map(_.guardId.get -> 0).toMap
+  private lazy val sortedRecords = Source.fromFile("sources/source4.txt").getLines.toVector
+    .map(parseData)
+    .sortWith(_.dateTime.getMillis < _.dateTime.getMillis)
 
-    def go(guards: Map[Int, Int], i: Int, currGuard: Int) = {
-      if (i == len - 1) {
+  def part1(): Int = {
+    val r = getGuardsMinuteMap
+    val bigSleeper = r.mapValues(_.foldLeft(0)((acc, mn) => acc + mn._2)).maxBy(_._2)._1
+    val sleepyMn = r(bigSleeper).maxBy(_._2)._1
 
-      }
-      val record = records(i)
-      if (record.guardId.isDefined) go(guards, i + 1, record.guardId.get)
-      else if (record.sleeping.get) go(guards.updated(currGuard, records(i + 1)), i + 2, currGuard)
-    }
+    bigSleeper * sleepyMn
   }
 
-  final case class Record(guardId: Option[Int], dateTime: DateTime, sleeping: Option[Boolean])
+  def part2(): Int = {
+    val bigSleeper = getGuardsMinuteMap
+      .mapValues(_.toVector.sortWith(_._2 > _._2))
+      .mapValues(_.maxBy(_._2))
+      .maxBy(_._2._2)
+
+    bigSleeper._1 * bigSleeper._2._1
+  }
+
+  private def getGuardsMinuteMap: Map[Int, Map[Int, Int]] = {
+    val records = sortedRecords
+    val len = records.length
+
+    val minutesMap = (0 to 59).map(_ -> 0).toMap
+    val firstGuard = records.head.guardId.get
+    val allGuards = records.filter(_.guardId.isDefined).map(_.guardId.get -> minutesMap).toMap
+
+    def go(guards: Map[Int, Map[Int, Int]], i: Int, currGuard: Int): Map[Int, Map[Int, Int]] = {
+      if (i == len) {
+        return guards
+      }
+
+      val record = records(i)
+
+      if (record.guardId.isDefined) {
+        go(guards, i + 1, record.guardId.get)
+      } else if (record.sleeping.get) {
+        val range = record.dateTime.getMinuteOfHour until records(i + 1).dateTime.getMinuteOfHour
+
+        go(
+          guards.updated(
+            currGuard,
+            guards(currGuard).map(mn => {
+              if (range.contains(mn._1)) mn._1 -> (mn._2 + 1)
+              else mn
+            })
+          ),
+          i + 2,
+          currGuard
+        )
+      } else {
+        go(guards, i + 1, currGuard)
+      }
+    }
+
+    go(allGuards, 1, firstGuard)
+  }
 
   private def parseData(l: String) = {
     val dateRegex = "(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})".r
@@ -40,8 +80,6 @@ object Day4 {
     }
   }
 
-  def part2() = {
-    val source = Source.fromFile("sources/source4.txt").getLines.toVector
+  final case class Record(guardId: Option[Int], dateTime: DateTime, sleeping: Option[Boolean])
 
-  }
 }
