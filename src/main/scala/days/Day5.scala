@@ -16,6 +16,8 @@ object Day5 {
   })
 
   def part2() = {
-
+    ('a' to 'z').foldLeft(List.empty[Int])((acc, l) => {
+      acc ++ List(collapsePolymer(polymer.filter(_.toLower != l)).length)
+    }).min
   }
 }
