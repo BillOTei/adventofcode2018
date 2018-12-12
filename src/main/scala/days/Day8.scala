@@ -16,7 +16,7 @@ object Day8 {
       val childrenCount = l.head
       val metaCount = l(1)
 
-      if (l.length <= metaEndAcc) {
+      if (l.length == metaEndAcc) {
         acc + l.sum
       } else if (childrenCount > 0) {
         go(l.tail.drop(1), acc, metaEndAcc + metaCount)
