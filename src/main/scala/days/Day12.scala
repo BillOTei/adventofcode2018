@@ -14,12 +14,43 @@ object Day12 {
     .toArray
 
   def part1() = {
+    def go(state: Map[Int, Char], gen: Int): Map[Int, Char] = {
+      if (gen == 20) state
+      else go(updateState(state), gen + 1)
+    }
 
-    notes
+    go(
+      initState.zipWithIndex.map(_.swap).toMap,
+      0
+    ).toList.sortBy(_._1).map(_._2).mkString("")
+  }
+
+  private def updateState(initState: Map[Int, Char]) = {
+    val keys = initState.keys
+    val (first, last) = (keys.min, keys.max)
+
+    val initStateString = initState.toArray.sortBy(_._1).map(_._2).mkString("")
+
+    val newPlants = notes
       .map(note => {
-        s"\\Q${note._1}\\E".r.findAllMatchIn(initState).map(_.start - 3).toList
+        s"\\Q${note._1}\\E".r
+          .findAllMatchIn("...." + initStateString + "....")
+          .map(_.start + 2 - 4)
+          .toList
       })
-      .foreach(println)
+      .filter(_.nonEmpty)
+      .reduce((acc, a) => acc ++ a)
+      .toArray
+
+    val begin = Array(first, newPlants.min).min
+    val end = Array(last, newPlants.max).max
+
+    (begin to end)
+      .map(i => {
+        if (newPlants.contains(i)) (i, '#')
+        else (i, '.')
+      })
+      .toMap
   }
 
   def part2() = {}
