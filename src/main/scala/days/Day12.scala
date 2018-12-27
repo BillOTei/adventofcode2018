@@ -3,7 +3,8 @@ package days
 import scala.io.Source
 
 object Day12 {
-  private val initState = "#..#.#..##......###...###"
+  private val initState =
+    "##..##....#.#.####........##.#.#####.##..#.#..#.#...##.#####.###.##...#....##....#..###.#...#.#.#.#"
   private val notes = Source
     .fromFile("sources/source12.txt")
     .getLines
@@ -13,7 +14,7 @@ object Day12 {
     })
     .toArray
 
-  def part1() = {
+  def part1(): Int = {
     def go(state: Map[Int, Char], gen: Int): Map[Int, Char] = {
       if (gen == 20) state
       else go(updateState(state), gen + 1)
@@ -22,36 +23,70 @@ object Day12 {
     go(
       initState.zipWithIndex.map(_.swap).toMap,
       0
-    ).toList.sortBy(_._1).map(_._2).mkString("")
+    ).toArray
+      .filter(_._2 == '#')
+      .sortBy(_._1)
+      .map(_._1)
+      .sum
   }
 
-  private def updateState(initState: Map[Int, Char]) = {
+  private def paddedState(initState: Map[Int, Char]) = {
     val keys = initState.keys
     val (first, last) = (keys.min, keys.max)
+    val headMap = ((first - 4) until first).map((_, '.')).toMap
+    val tailMap = (last + 1 to last + 4).map((_, '.')).toMap
 
-    val initStateString = initState.toArray.sortBy(_._1).map(_._2).mkString("")
+    (headMap ++ initState ++ tailMap).mapValues(_ => '.')
+  }
 
-    val newPlants = notes
+  private def paddedMatches(state: Map[Int, Char]) = {
+    val strState = state.toArray.sortBy(_._1).map(_._2).mkString("")
+    val padding = 2 - 4 + state.minBy(_._1)._1
+    // 2: center of the note, 4: empty pots added, min state idx: the shift along the initial state
+
+    notes
       .map(note => {
-        s"\\Q${note._1}\\E".r
-          .findAllMatchIn("...." + initStateString + "....")
-          .map(_.start + 2 - 4)
+        s"""(?=${note._1})""".r
+          .findAllMatchIn("...." + strState + "....")
+          .map(_.start + padding)
           .toList
       })
       .filter(_.nonEmpty)
       .reduce((acc, a) => acc ++ a)
       .toArray
-
-    val begin = Array(first, newPlants.min).min
-    val end = Array(last, newPlants.max).max
-
-    (begin to end)
-      .map(i => {
-        if (newPlants.contains(i)) (i, '#')
-        else (i, '.')
-      })
-      .toMap
   }
 
-  def part2() = {}
+  private def updateState(initState: Map[Int, Char]) = {
+    val newPlants = paddedMatches(initState)
+
+    val check = initState.toArray.sortBy(_._1).map(_._2).mkString("")
+
+    val newState = paddedState(initState)
+    val rArray = newPlants
+      .foldLeft(newState)((st, i) => st.updated(i, '#'))
+      .toArray
+      .sortBy(_._1)
+    val (start, end) = (
+      rArray.find(_._2 == '#').get._1,
+      rArray(rArray.lastIndexWhere(_._2 == '#'))._1
+    )
+
+    rArray.filter(p => p._1 >= start && p._1 <= end).toMap
+  }
+
+  def part2(): Int = {
+    def go(state: Map[Int, Char], gen: Long): Map[Int, Char] = {
+      if (gen == 50000000000L) state
+      else go(updateState(state), gen + 1)
+    }
+
+    go(
+      initState.zipWithIndex.map(_.swap).toMap,
+      0
+    ).toArray
+      .filter(_._2 == '#')
+      .sortBy(_._1)
+      .map(_._1)
+      .sum
+  }
 }
