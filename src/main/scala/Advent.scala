@@ -1,5 +1,5 @@
 import days._
 
 object Advent extends App {
-  println(Day12.part2())
+  println(Day13.part1())
 }

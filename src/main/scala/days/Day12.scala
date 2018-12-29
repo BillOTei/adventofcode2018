@@ -59,8 +59,6 @@ object Day12 {
   private def updateState(initState: Map[Int, Char]) = {
     val newPlants = paddedMatches(initState)
 
-    val check = initState.toArray.sortBy(_._1).map(_._2).mkString("")
-
     val newState = paddedState(initState)
     val rArray = newPlants
       .foldLeft(newState)((st, i) => st.updated(i, '#'))
@@ -76,6 +74,10 @@ object Day12 {
 
   def part2(): Int = {
     def go(state: Map[Int, Char], gen: Long): Map[Int, Char] = {
+      println(gen)
+      val check = state.toArray.sortBy(_._1).map(_._2).mkString("")
+      if (check == this.initState && gen > 1) sys.exit(0)
+
       if (gen == 50000000000L) state
       else go(updateState(state), gen + 1)
     }
