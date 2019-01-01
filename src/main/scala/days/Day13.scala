@@ -2,6 +2,7 @@ package days
 
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
+import scala.util.Try
 
 object Day13 {
   private val carts =
@@ -29,11 +30,22 @@ object Day13 {
   }
   //.foreach(l => l.foreach(println))
 
+  private def move(p: (Int, Int, String),
+                   c: (Int, Int, String, (String, String, String))) =
+    p._3 match {
+      case "-"  => (p._1, p._2, c._3)
+      case "\\" =>
+      case "|"  =>
+      case "/"  =>
+      case "+"  =>
+    }
+
   def part1() = {
     val s = source()
-    def go (source: Array[Array[(Int, Int, String)]]): Unit = {
+    def go(source: Array[Array[(Int, Int, String)]]): Unit = {
       carts.map(c => {
-        val nextStep = source(c._2)
+        val t =
+          Try(source(c._2)).flatMap(row => Try(row(c._1 + 1)).map(p => p._3))
       })
 
       go(
