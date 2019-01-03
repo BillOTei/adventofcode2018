@@ -73,10 +73,14 @@ object Day12 {
   }
 
   def part2(): Int = {
+    val buff = Array[String]()
+
     def go(state: Map[Int, Char], gen: Long): Map[Int, Char] = {
       println(gen)
       val check = state.toArray.sortBy(_._1).map(_._2).mkString("")
-      if (check == this.initState && gen > 1) sys.exit(0)
+      if (buff.contains(check)) {
+        sys.exit(0)
+      } else buff.+:(check)
 
       if (gen == 50000000000L) state
       else go(updateState(state), gen + 1)
