@@ -68,26 +68,29 @@ object Day13 {
 
   private def move(c: (Int, Int, String, (String, String, String)),
                    source: Array[Array[(Int, Int, String)]]) = c._3 match {
-    case ">" => Try(source(c._2)).flatMap(row => Try(row(c._1 + 1)).map(p => process(p, c)))
-    case "v" =>
-    case "<" =>
-    case "^" =>
+    case ">" => process(source(c._2)(c._1 + 1), c)
+    case "v" => process(source(c._2 + 1)(c._1), c)
+    case "<" => process(source(c._2)(c._1 - 1), c)
+    case "^" => process(source(c._2 - 1)(c._1), c)
   }
 
   def part1() = {
     val s = source()
-    def go(source: Array[Array[(Int, Int, String)]]): Unit = {
-      carts.map(c => {
-        val t = Try(source(c._2)).flatMap(row =>
-          Try(row(c._1 + 1)).map(p => process(p, c)))
-
-        t
-      })
-
-      go(
-        source
-      )
+    def go(source: Array[Array[(Int, Int, String)]],
+           carts: ArrayBuffer[(Int, Int, String, (String, String, String))])
+      : (Int, Int) = {
+      val cartsByPos = carts.map(c => ((c._1, c._2), c._3)).groupBy(_._1)
+      if (cartsByPos.exists(_._2.length > 1)) {
+        cartsByPos.find(_._2.length > 1).get._1
+      } else {
+        go(
+          source,
+          carts.map(c => move(c, source))
+        )
+      }
     }
+
+    go(s, carts)
   }
 
   def part2() = {}
