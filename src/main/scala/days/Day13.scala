@@ -17,7 +17,6 @@ object Day13 {
           l._1
             .split("")
             .zipWithIndex
-            //.filter(_._1 != " ")
             .map(p => {
               p._1 match {
                 case _ @ ">" | "<" =>
@@ -76,24 +75,30 @@ object Day13 {
     case "^" => process(source(c._2 - 1)(c._1), c)
   }
 
+  private def hasCrashed(
+      carts: ArrayBuffer[(Int, Int, String, (String, String, String))]) = {
+    val cartsByPos = carts.map(c => ((c._1, c._2), c._3)).groupBy(_._1)
+
+    cartsByPos.exists(_._2.length > 1)
+  }
+
   def part1(): (Int, Int) = {
     val s = source()
-    def go(source: Array[Array[(Int, Int, String)]],
-           carts: ArrayBuffer[(Int, Int, String, (String, String, String))],
-           i: Int): (Int, Int) = {
-      val cartsByPos = carts.map(c => ((c._1, c._2), c._3)).groupBy(_._1)
-      if (cartsByPos.exists(_._2.length > 1)) {
-        cartsByPos.find(_._2.length > 1).get._1
-      } else {
-        go(
-          source,
-          carts.map(c => move(c, source)),
-          i + 1
-        )
+    var localCarts = this.carts.sortBy(r => (r._2, r._1))
+
+    while (true) {
+      for (i <- localCarts.indices) {
+        localCarts(i) = move(localCarts(i), s)
+        if (hasCrashed(localCarts)) {
+          val cartsByPos = localCarts.map(c => ((c._1, c._2), c._3)).groupBy(_._1)
+
+          return cartsByPos.find(_._2.length > 1).get._1
+        }
       }
+      localCarts = localCarts.sortBy(r => (r._2, r._1))
     }
 
-    go(s, carts, 0)
+    (0, 0)
   }
 
   def part2() = {}
