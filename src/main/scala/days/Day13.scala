@@ -6,6 +6,7 @@ import scala.io.Source
 object Day13 {
   private val carts =
     ArrayBuffer[(Int, Int, String, (String, String, String))]()
+  private val emptyCart = (0, 0, "", ("", "", ""))
 
   private def source(): Array[Array[(Int, Int, String)]] = {
     Source
@@ -73,6 +74,7 @@ object Day13 {
     case "v" => process(source(c._2 + 1)(c._1), c)
     case "<" => process(source(c._2)(c._1 - 1), c)
     case "^" => process(source(c._2 - 1)(c._1), c)
+    case ""  => emptyCart
   }
 
   private def hasCrashed(
@@ -90,7 +92,8 @@ object Day13 {
       for (i <- localCarts.indices) {
         localCarts(i) = move(localCarts(i), s)
         if (hasCrashed(localCarts)) {
-          val cartsByPos = localCarts.map(c => ((c._1, c._2), c._3)).groupBy(_._1)
+          val cartsByPos =
+            localCarts.map(c => ((c._1, c._2), c._3)).groupBy(_._1)
 
           return cartsByPos.find(_._2.length > 1).get._1
         }
@@ -101,5 +104,33 @@ object Day13 {
     (0, 0)
   }
 
-  def part2() = {}
+  def part2(): (Int, Int) = {
+    val s = source()
+    var localCarts = this.carts.sortBy(r => (r._2, r._1))
+
+    while (true) {
+      for (i <- localCarts.indices) {
+        localCarts(i) = move(localCarts(i), s)
+        if (hasCrashed(localCarts)) {
+          val cartsByPos =
+            localCarts.map(c => ((c._1, c._2), c._3)).groupBy(_._1)
+          val toRemove = cartsByPos.filter(_._2.length > 1)
+
+          localCarts = localCarts.map(
+            c =>
+              if (toRemove.contains((c._1, c._2))) emptyCart
+              else c
+          )
+        }
+      }
+      if (localCarts.count(c => c != emptyCart) == 1) {
+        val r = localCarts.filter(c => c != emptyCart).head
+
+        return (r._1, r._2)
+      }
+      localCarts = localCarts.sortBy(r => (r._2, r._1))
+    }
+
+    (0, 0)
+  }
 }
