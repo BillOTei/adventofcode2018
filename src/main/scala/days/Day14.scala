@@ -36,13 +36,12 @@ object Day14 {
   def part2() = {
     def go(state: String, p1: Int, p2: Int): Int = {
       val (r1, r2) = (state(p1).asDigit, state(p2).asDigit)
-      val newState = time("newState")(state + (r1 + r2))
+      val newState = state + (r1 + r2)
       val l = newState.length
+      val recipesNbStr = recipesNb.toString
 
-//      println(newState)
-
-      if (newState.takeRight(recipesNb.toString.length) == recipesNb.toString) {
-        newState.slice(0, newState.indexOf(recipesNb.toString)).length
+      if (newState.takeRight(recipesNbStr.length * 2).contains(recipesNbStr)) {
+        newState.slice(0, newState.indexOf(recipesNbStr)).length
       } else {
         go(
           newState,
