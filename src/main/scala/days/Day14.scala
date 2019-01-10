@@ -3,7 +3,7 @@ package days
 object Day14 {
   private val recipesNb = 919901
 
-  def part1() = {
+  def part1(): String = {
     def go(state: String, p1: Int, p2: Int): String = {
       val (r1, r2) = (state(p1).asDigit, state(p2).asDigit)
       val newState = state + (r1 + r2)
@@ -33,7 +33,7 @@ object Day14 {
     result
   }
 
-  def part2() = {
+  def part2(): Int = {
     def go(state: String, p1: Int, p2: Int): Int = {
       val (r1, r2) = (state(p1).asDigit, state(p2).asDigit)
       val newState = state + (r1 + r2)
