@@ -25,8 +25,23 @@ object Day15 {
     def go(fighters: ArrayBuffer[((Int, Int), String)], i: Int) = {
       val f = fighters(i)
       val opponents = fighters.filter(_._2 != f._2)
+      val inRangeReachable = opponents.flatMap(o => getInRange(m, o))
 
+      1
     }
+
+    go(frs, 0)
+  }
+
+  private def path(map: Array[((Int, Int), String)], a: ((Int, Int), String), b: ((Int, Int), String))
+
+  private def getInRange(map: Array[((Int, Int), String)], p: ((Int, Int), String)) = {
+    val (x, y) = p._1
+    val surroundings = List((x, y - 1), (x, y + 1), (x + 1, y), (x - 1, y))
+
+    map
+      .filter(pt => surroundings.contains(pt._1) && pt._2 == ".")
+      .sortBy(p => (p._1._2, p._1._1))
   }
 
   def part2() = {
