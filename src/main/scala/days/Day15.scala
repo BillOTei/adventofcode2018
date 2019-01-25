@@ -1,9 +1,7 @@
 package days
 
 import scala.collection.mutable
-import scala.util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.ListMap
 import scala.io.Source
 
 object Day15 {
@@ -62,9 +60,9 @@ object Day15 {
       visited(s) = true
 
       val prev = collection.mutable
-        .ListMap[((Int, Int), String), Option[((Int, Int), String)]](
+        .Map[((Int, Int), String), Option[((Int, Int), String)]](
           map.map(_ -> None): _*
-      )
+        )
 
       while (q.nonEmpty) {
         val node = q.dequeue()
@@ -90,79 +88,27 @@ object Day15 {
     def reconstructPath(
         start: ((Int, Int), String),
         end: ((Int, Int), String),
-        p: collection.mutable.ListMap[((Int, Int), String),
-                                      Option[((Int, Int), String)]]) = {
-      val pathWithIdx = p.zipWithIndex.toArray
-      val iEnd = pathWithIdx.find(_._1._1 == end).get._2
-      val path = ArrayBuffer[((Int, Int), String)]()
-
-      breakable {
-        for {
-          i <- iEnd to 0 by -1
-        } yield {
-          val t = pathWithIdx(i)
-          if (t._1._2.isEmpty) {
-            break
-          } else {
-            path += t._1._2.get
-          }
+        p: collection.mutable.Map[((Int, Int), String),
+                                  Option[((Int, Int), String)]]) = {
+      def go(path: Array[((Int, Int), String)],
+             n: ((Int, Int), String)): Array[((Int, Int), String)] = {
+        val parent = p(n)
+        if (path.contains(start)) {
+          path.reverse :+ end
+        } else if (parent.isEmpty) {
+          Array.empty
+        } else {
+          go(path :+ parent.get, parent.get)
         }
       }
 
-      if (path.nonEmpty && path.head == start) path.reverse
-      else ArrayBuffer[((Int, Int), String)]()
+      go(Array.empty, end)
     }
 
     val prev = solve(start)
 
     reconstructPath(start, end, prev)
   }
-
-  //  private def bfs(map: Array[((Int, Int), String)],
-  //                  start: ((Int, Int), String),
-  //                  end: ((Int, Int), String)): Int = {
-  //
-  //    val freeCount = map.count(_._2 == ".")
-  //
-  //    def go(q: Array[((Int, Int), String)],
-  //           m: Array[((Int, Int), String)],
-  //           v: ArrayBuffer[((Int, Int), String)],
-  //           p: ArrayBuffer[(((Int, Int), String), Int)]): Int = {
-  //      val remaining = ArrayBuffer[((Int, Int), String)]()
-  //      val localVisited = ArrayBuffer[((Int, Int), String)]()
-  //
-  //      val surroundings = q
-  //        .filterNot(n => v.contains(n))
-  //        .flatMap(node => {
-  //          val (s, r) = m.partition(p => {
-  //            val (x, y) = node._1
-  //            List((x, y - 1), (x, y + 1), (x + 1, y), (x - 1, y))
-  //              .contains(p._1) && p._2 == "."
-  //          })
-  //
-  //          remaining.++=(r)
-  //          localVisited.+=(node)
-  //
-  //          if (!p.map(_._1).contains(node)) {
-  //            p.+=((node, p.length))
-  //          }
-  //
-  //          s
-  //        })
-  //
-  //      if (surroundings.contains(end)) {
-  //        0
-  //      } else if (v.size + localVisited.size == freeCount - 1) {
-  //        -1
-  //      } else {
-  //        go((q ++ surroundings).distinct,
-  //           remaining.toArray,
-  //           v.++=(localVisited).distinct)
-  //      }
-  //    }
-//
-//    go(Array(start), map, ArrayBuffer.empty, ArrayBuffer.empty)
-//  }
 
   private def getInRange(map: Array[((Int, Int), String)],
                          p: ((Int, Int), String)) = {
