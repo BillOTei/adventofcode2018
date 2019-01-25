@@ -22,30 +22,62 @@ object Day15 {
             ((p._2, l._2), p._1)
           }))
     .toArray
+    .sortBy(p => (p._1._2, p._1._1))
+
+  private def surr(x: Int, y: Int) =
+    List((x, y - 1), (x, y + 1), (x - 1, y), (x + 1, y))
 
   def part1() = {
     val m = map
     val frs = fightersArr.sortBy(f => (f._1._2, f._1._1))
-
-    def go(fighters: ArrayBuffer[((Int, Int), String)], i: Int) = {
-      val f = fighters(i)
-      val opponents = fighters.filter(_._2 != f._2)
-      val inRangeReachable = opponents
-        .flatMap(o => getInRange(m, o))
-        .foldLeft(List[(((Int, Int), String), Int)]())((acc, p) => {
-          val count = bfs(m, f, p)
-
-          acc
-//          if (count != -1) {
-//            acc :+ (p, count)
-//          } else acc
-        })
-        .sortBy(p => (p._2, p._1._1._2, p._1._1._1)) // Sort by path length then reading order (y then x)
-
-      inRangeReachable.head
+    def go(fighters: ArrayBuffer[((Int, Int), String)]) = {
+      val newFrs = round(m, fighters, 0, fighters.size).sortBy(f => (f._1._2, f._1._1))
+      //if ()
     }
 
-    go(frs, 0)
+
+  }
+
+  private def round(m: Array[((Int, Int), String)],
+                    fighters: ArrayBuffer[((Int, Int), String)],
+                    i: Int,
+                    len: Int): ArrayBuffer[((Int, Int), String)] = {
+    if (i >= len) {
+      return fighters
+    }
+
+    val f = fighters(i)
+    val directOppo = directOpponents(fighters.filter(_ != f), f)
+    if (directOppo.nonEmpty) {
+      return round(m, fighters, i + 1, len)
+    }
+
+    val opponents = fighters.filter(_._2 != f._2)
+    val inRangeReachable = opponents
+      .flatMap(o => getInRange(m, o))
+      .foldLeft(Array[Array[((Int, Int), String)]]())((acc, p) => {
+        val path = bfs(m, f, p)
+        if (path.nonEmpty) {
+          acc :+ path
+        } else acc
+      })
+      .sortBy(_.length)
+    val firstStep = inRangeReachable.headOption.map(_(1))
+
+    round(
+      m,
+      fighters.map(fi => if (fi == f) (firstStep.get._1, f._2) else fi),
+      i + 1,
+      len
+    )
+  }
+
+  private def directOpponents(opponents: ArrayBuffer[((Int, Int), String)],
+                              f: ((Int, Int), String)) = {
+    opponents.filter(o => {
+      val (x, y) = f._1
+      surr(x, y).contains(o._1)
+    })
   }
 
   private def bfs(map: Array[((Int, Int), String)],
@@ -69,8 +101,7 @@ object Day15 {
 
         val surroundings = map.filter(p => {
           val (x, y) = node._1
-          List((x, y - 1), (x, y + 1), (x + 1, y), (x - 1, y))
-            .contains(p._1) && p._2 == "."
+          surr(x, y).contains(p._1) && p._2 == "."
         })
 
         surroundings.foreach(surr => {
@@ -113,7 +144,7 @@ object Day15 {
   private def getInRange(map: Array[((Int, Int), String)],
                          p: ((Int, Int), String)) = {
     val (x, y) = p._1
-    val surroundings = List((x, y - 1), (x, y + 1), (x + 1, y), (x - 1, y))
+    val surroundings = surr(x, y)
 
     map
       .filter(pt => surroundings.contains(pt._1) && pt._2 == ".")
