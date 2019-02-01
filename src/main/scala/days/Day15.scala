@@ -24,26 +24,43 @@ object Day15 {
     .toArray
     .sortBy(p => (p._1._2, p._1._1))
 
-  private def surr(x: Int, y: Int) =
-    List((x, y - 1), (x, y + 1), (x - 1, y), (x + 1, y))
-
   def part1() = {
     val m = map
     val frs = fightersArr.sortBy(f => (f._1._2, f._1._1))
-    def go(fighters: ArrayBuffer[((Int, Int), String)]) = {
-      val newFrs = round(m, fighters, 0, fighters.size).sortBy(f => (f._1._2, f._1._1))
-      //if ()
+
+    def go(
+            fighters: ArrayBuffer[((Int, Int), String)],
+            prevFighters: ArrayBuffer[((Int, Int), String)],
+            map: Array[((Int, Int), String)]): ArrayBuffer[((Int, Int), String)] = {
+
+      val (newFrs, newMap) = round(
+        newMap,
+        fighters,
+        0,
+        fighters.size
+      )
+
+      if (newFrs.sortBy(f => (f._1._2, f._1._1)).toArray.deep == fighters.toArray.deep) {
+        fighters
+      } else {
+        go(newFrs, fighters, newMap)
+      }
     }
 
-
+    go(frs, ArrayBuffer.empty, m)
   }
+
+  def part2() = {}
+
+  private def surr(x: Int, y: Int) =
+    List((x, y - 1), (x, y + 1), (x - 1, y), (x + 1, y))
 
   private def round(m: Array[((Int, Int), String)],
                     fighters: ArrayBuffer[((Int, Int), String)],
                     i: Int,
-                    len: Int): ArrayBuffer[((Int, Int), String)] = {
+                    len: Int): (ArrayBuffer[((Int, Int), String)], Array[((Int, Int), String)]) = {
     if (i >= len) {
-      return fighters
+      return (fighters, m)
     }
 
     val f = fighters(i)
@@ -62,10 +79,14 @@ object Day15 {
         } else acc
       })
       .sortBy(_.length)
-    val firstStep = inRangeReachable.headOption.map(_(1))
+    val firstStep = inRangeReachable.headOption.map(_ (1))
 
     round(
-      m,
+      m.map(p => {
+        if (p._1 == firstStep.get._1) (firstStep.get._1, f._2)
+        else if (p._1 == f._1) (p._1, ".")
+        else p
+      }),
       fighters.map(fi => if (fi == f) (firstStep.get._1, f._2) else fi),
       i + 1,
       len
@@ -93,8 +114,8 @@ object Day15 {
 
       val prev = collection.mutable
         .Map[((Int, Int), String), Option[((Int, Int), String)]](
-          map.map(_ -> None): _*
-        )
+        map.map(_ -> None): _*
+      )
 
       while (q.nonEmpty) {
         val node = q.dequeue()
@@ -117,10 +138,10 @@ object Day15 {
     }
 
     def reconstructPath(
-        start: ((Int, Int), String),
-        end: ((Int, Int), String),
-        p: collection.mutable.Map[((Int, Int), String),
-                                  Option[((Int, Int), String)]]) = {
+                         start: ((Int, Int), String),
+                         end: ((Int, Int), String),
+                         p: collection.mutable.Map[((Int, Int), String),
+                           Option[((Int, Int), String)]]) = {
       def go(path: Array[((Int, Int), String)],
              n: ((Int, Int), String)): Array[((Int, Int), String)] = {
         val parent = p(n)
@@ -150,6 +171,4 @@ object Day15 {
       .filter(pt => surroundings.contains(pt._1) && pt._2 == ".")
       .sortBy(p => (p._1._2, p._1._1))
   }
-
-  def part2() = {}
 }
