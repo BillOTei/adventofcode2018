@@ -34,7 +34,7 @@ object Day15 {
             map: Array[((Int, Int), String)]): ArrayBuffer[((Int, Int), String)] = {
 
       val (newFrs, newMap) = round(
-        newMap,
+        map,
         fighters,
         0,
         fighters.size
@@ -80,6 +80,9 @@ object Day15 {
       })
       .sortBy(_.length)
     val firstStep = inRangeReachable.headOption.map(_ (1))
+    if (firstStep.isEmpty) {
+      return round(m, fighters, i + 1, len)
+    }
 
     round(
       m.map(p => {
@@ -97,7 +100,7 @@ object Day15 {
                               f: ((Int, Int), String)) = {
     opponents.filter(o => {
       val (x, y) = f._1
-      surr(x, y).contains(o._1)
+      surr(x, y).contains(o._1) && o._2 != f._2
     })
   }
 
