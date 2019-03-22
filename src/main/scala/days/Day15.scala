@@ -5,8 +5,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 object Day15 {
-  val fightersArr: ArrayBuffer[((Int, Int), String)] = ArrayBuffer()
-  val map: Array[((Int, Int), String)] = Source
+  val fightersArr: ArrayBuffer[((Int, Int), String, Int)] = ArrayBuffer()
+  val map: Array[((Int, Int), String, Int)] = Source
     .fromFile("sources/source15.txt")
     .getLines
     .zipWithIndex
@@ -17,9 +17,9 @@ object Day15 {
           .zipWithIndex
           .map(p => {
             if (List("G", "E").contains(p._1))
-              fightersArr.+=(((p._2, l._2), p._1))
+              fightersArr.+=(((p._2, l._2), p._1, 200))
 
-            ((p._2, l._2), p._1)
+            ((p._2, l._2), p._1, 200)
           }))
     .toArray
     .sortBy(p => (p._1._2, p._1._1))
@@ -29,9 +29,14 @@ object Day15 {
     val frs = fightersArr.sortBy(f => (f._1._2, f._1._1))
 
     def go(
-            fighters: ArrayBuffer[((Int, Int), String)],
-            prevFighters: ArrayBuffer[((Int, Int), String)],
-            map: Array[((Int, Int), String)]): ArrayBuffer[((Int, Int), String)] = {
+            fighters: ArrayBuffer[((Int, Int), String, Int)],
+            prevFighters: ArrayBuffer[((Int, Int), String, Int)],
+            map: Array[((Int, Int), String, Int)],
+            r: Int): ArrayBuffer[((Int, Int), String, Int)] = {
+
+      if (r == 46) {
+        val t = 0
+      }
 
       val (newFrs, newMap) = round(
         map,
@@ -43,11 +48,11 @@ object Day15 {
       if (newFrs.sortBy(f => (f._1._2, f._1._1)).toArray.deep == fighters.toArray.deep) {
         fighters
       } else {
-        go(newFrs, fighters, newMap)
+        go(newFrs, fighters, newMap, r + 1)
       }
     }
 
-    go(frs, ArrayBuffer.empty, m)
+    go(frs, ArrayBuffer.empty, m, 0)
   }
 
   def part2() = {}
@@ -55,10 +60,31 @@ object Day15 {
   private def surr(x: Int, y: Int) =
     List((x, y - 1), (x, y + 1), (x - 1, y), (x + 1, y))
 
-  private def round(m: Array[((Int, Int), String)],
-                    fighters: ArrayBuffer[((Int, Int), String)],
+  private def fight(
+                     directOppo: ArrayBuffer[((Int, Int), String, Int)],
+                     m: Array[((Int, Int), String, Int)],
+                     fighters: ArrayBuffer[((Int, Int), String, Int)]
+                   ) = {
+    if (directOppo.nonEmpty) {
+      val opponent = directOppo.minBy(opp => (opp._3, opp._1._2, opp._1._1))
+      if (opponent._3 - 3 <= 0) {
+        (
+          m.map(p => if (p._1 == opponent._1) (p._1, ".", 200) else p),
+          fighters.filter(_._1 != opponent._1),
+        )
+      } else {
+        (
+          m.map(p => if (p._1 == opponent._1) opponent.copy(_3 = opponent._3 - 3) else p),
+          fighters.map(fighter => if (fighter._1 == opponent._1) opponent.copy(_3 = opponent._3 - 3) else fighter),
+        )
+      }
+    } else (m, fighters)
+  }
+
+  private def round(m: Array[((Int, Int), String, Int)],
+                    fighters: ArrayBuffer[((Int, Int), String, Int)],
                     i: Int,
-                    len: Int): (ArrayBuffer[((Int, Int), String)], Array[((Int, Int), String)]) = {
+                    len: Int): (ArrayBuffer[((Int, Int), String, Int)], Array[((Int, Int), String, Int)]) = {
     if (i >= len) {
       return (fighters, m)
     }
@@ -66,13 +92,21 @@ object Day15 {
     val f = fighters(i)
     val directOppo = directOpponents(fighters.filter(_ != f), f)
     if (directOppo.nonEmpty) {
-      return round(m, fighters, i + 1, len)
+      // Direct fight
+      val (newDirectMap, newDirectFighters) = fight(directOppo, m, fighters)
+
+      return round(
+        newDirectMap,
+        newDirectFighters,
+        i + 1 - (len - newDirectFighters.size),
+        newDirectFighters.size
+      )
     }
 
     val opponents = fighters.filter(_._2 != f._2)
     val inRangeReachable = opponents
       .flatMap(o => getInRange(m, o))
-      .foldLeft(Array[Array[((Int, Int), String)]]())((acc, p) => {
+      .foldLeft(Array[Array[((Int, Int), String, Int)]]())((acc, p) => {
         val path = bfs(m, f, p)
         if (path.nonEmpty) {
           acc :+ path
@@ -84,39 +118,46 @@ object Day15 {
       return round(m, fighters, i + 1, len)
     }
 
+    val movedFighter = (firstStep.get._1, f._2, f._3)
+    val (newMap, newFighters) = fight(
+      directOpponents(fighters.filter(_ != f), movedFighter),
+      m,
+      fighters
+    )
+
     round(
-      m.map(p => {
-        if (p._1 == firstStep.get._1) (firstStep.get._1, f._2)
-        else if (p._1 == f._1) (p._1, ".")
+      newMap.map(p => {
+        if (p._1 == firstStep.get._1) movedFighter
+        else if (p._1 == f._1) (p._1, ".", 200)
         else p
       }),
-      fighters.map(fi => if (fi == f) (firstStep.get._1, f._2) else fi),
-      i + 1,
-      len
+      newFighters.map(fi => if (fi == f) movedFighter else fi),
+      i + 1 - (len - newFighters.size),
+      newFighters.size
     )
   }
 
-  private def directOpponents(opponents: ArrayBuffer[((Int, Int), String)],
-                              f: ((Int, Int), String)) = {
+  private def directOpponents(opponents: ArrayBuffer[((Int, Int), String, Int)],
+                              f: ((Int, Int), String, Int)) = {
     opponents.filter(o => {
       val (x, y) = f._1
       surr(x, y).contains(o._1) && o._2 != f._2
     })
   }
 
-  private def bfs(map: Array[((Int, Int), String)],
-                  start: ((Int, Int), String),
-                  end: ((Int, Int), String)) = {
+  private def bfs(map: Array[((Int, Int), String, Int)],
+                  start: ((Int, Int), String, Int),
+                  end: ((Int, Int), String, Int)) = {
 
-    def solve(s: ((Int, Int), String)) = {
-      val q = mutable.Queue[((Int, Int), String)]()
+    def solve(s: ((Int, Int), String, Int)) = {
+      val q = mutable.Queue[((Int, Int), String, Int)]()
       q.enqueue(s)
 
       val visited = collection.mutable.Map(map.map(_ -> false): _*)
       visited(s) = true
 
       val prev = collection.mutable
-        .Map[((Int, Int), String), Option[((Int, Int), String)]](
+        .Map[((Int, Int), String, Int), Option[((Int, Int), String, Int)]](
         map.map(_ -> None): _*
       )
 
@@ -141,12 +182,12 @@ object Day15 {
     }
 
     def reconstructPath(
-                         start: ((Int, Int), String),
-                         end: ((Int, Int), String),
-                         p: collection.mutable.Map[((Int, Int), String),
-                           Option[((Int, Int), String)]]) = {
-      def go(path: Array[((Int, Int), String)],
-             n: ((Int, Int), String)): Array[((Int, Int), String)] = {
+                         start: ((Int, Int), String, Int),
+                         end: ((Int, Int), String, Int),
+                         p: collection.mutable.Map[((Int, Int), String, Int),
+                           Option[((Int, Int), String, Int)]]) = {
+      def go(path: Array[((Int, Int), String, Int)],
+             n: ((Int, Int), String, Int)): Array[((Int, Int), String, Int)] = {
         val parent = p(n)
         if (path.contains(start)) {
           path.reverse :+ end
@@ -165,8 +206,8 @@ object Day15 {
     reconstructPath(start, end, prev)
   }
 
-  private def getInRange(map: Array[((Int, Int), String)],
-                         p: ((Int, Int), String)) = {
+  private def getInRange(map: Array[((Int, Int), String, Int)],
+                         p: ((Int, Int), String, Int)) = {
     val (x, y) = p._1
     val surroundings = surr(x, y)
 
